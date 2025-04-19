@@ -4,9 +4,9 @@ import com.blps.lab1.entities.Report;
 import com.blps.lab1.entities.Review;
 import com.blps.lab1.repositories.ReportRepository;
 import com.blps.lab1.repositories.ReviewRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,6 +33,7 @@ public class ReportService {
         generateReportForPeriod(startOfLastWeek, endOfLastWeek);
     }
 
+    @Transactional
     public Report findReportByPeriod(LocalDate date) {
         LocalDate weekStart = date.with(DayOfWeek.MONDAY);
         LocalDate weekEnd = date.with(DayOfWeek.SUNDAY);
