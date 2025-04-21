@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 public class TemplateService {
     public String createResponseTemplate(Review review) {
         if (review.getRating() >= 4.5) {
-            return "Благодарим за отзыв! Мы рады что вам понравилось у нас работать";
+            return "Wow, Thank you for review";
         } else {
-            return "Благодарим за отзыв! Мы учтем и исправим недочеты, спасибо что работали у нас";
+            return "Thank you for review";
         }
     }
 }

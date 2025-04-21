@@ -24,7 +24,7 @@ public class Review {
 
     @ManyToOne
     @JoinColumn(name = "vacancy_id")
-    @ToString.Exclude  // Чтобы избежать рекурсии в toString()
+    @ToString.Exclude
     private Vacancy vacancy;
 
     @ManyToOne

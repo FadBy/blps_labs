@@ -7,5 +7,4 @@ import lombok.*;
 public class VacancyDTO {
     private String title;
     private String description;
-
 }

@@ -7,37 +7,41 @@ import com.blps.lab1.repositories.EmployeeRepository;
 import com.blps.lab1.repositories.ResponseRepository;
 import com.blps.lab1.repositories.ReviewRepository;
 import com.blps.lab1.repositories.VacancyRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.*;
+import com.itextpdf.text.pdf.PdfWriter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Paragraph;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class ReviewService {
-    @Autowired
-    private ReviewRepository reviewRepository;
-    @Autowired
-    private ResponseRepository responseRepository;
-    @Autowired
-    private HRService hrService;
-    @Autowired
-    private EmployeeRepository employeeRepository;
-    @Autowired
-    private VacancyRepository vacancyRepository;
-    @Autowired
-    private TemplateService templateService;
+    private final ReviewRepository reviewRepository;
+    private final ResponseRepository responseRepository;
+    private final HRService hrService;
+    private final EmployeeRepository employeeRepository;
+    private final VacancyRepository vacancyRepository;
+    private final TemplateService templateService;
 
-    @Scheduled(fixedRate = 60000)
-    public List<Review> processNewReviews() {
-        System.out.println("processNewReviews");
-        List<Review> reviews = reviewRepository.findAllByStatus(ReviewStatus.NEW);
-        for (var review : reviews) {
-           processReview(review);
+    public Resource processNewReviews() throws Exception {
+        Review review = reviewRepository.findAllByStatus(ReviewStatus.NEW).stream().findFirst().orElse(null);
+        ByteArrayOutputStream pdfStream = new ByteArrayOutputStream();
+
+        Response response = null;
+        if (review != null) {
+            response = processReview(review, pdfStream);
         }
-        return reviews;
+        generatePDF(response, pdfStream);
+
+        return new ByteArrayResource(pdfStream.toByteArray());
     }
 
     public Review save(ReviewDTO review) {
@@ -68,7 +72,7 @@ public class ReviewService {
         return reviewRepository.findAllByVacancy(vacancy);
     }
 
-    private void processReview(Review review) {
+    private Response processReview(Review review, ByteArrayOutputStream pdfStream) {
         String message;
         if (review.getRating() < 3.5) {
             message = hrService.escalateReview(review);
@@ -76,17 +80,56 @@ public class ReviewService {
             message = templateService.createResponseTemplate(review);
         }
         var response = prepareResponse(review, message);
-        publishResponse(response);
+        publishResponse(response, pdfStream);
+        return response;
     }
 
-    private void publishResponse(Response response) {
+    private void publishResponse(Response response, ByteArrayOutputStream pdfStream) {
         responseRepository.save(response);
         reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
-        sendReportToHR(response);
+
     }
 
-    private void sendReportToHR(Response response) {
-        // Отправляем отчет HR
+    private void generatePDF(Response response, ByteArrayOutputStream pdfStream) throws Exception {
+        Document document = new Document();
+        try {
+            PdfWriter.getInstance(document, pdfStream);
+
+            document.open();
+
+            document.add(new Paragraph("Review Response Report"));
+            document.add(new Paragraph("----------------------------------------"));
+
+            document.add(new Paragraph(" "));
+
+            if (response == null) {
+                document.add(new Paragraph("No new reviews found"));
+                return;
+            }
+
+            document.add(new Paragraph("Review ID: " + response.getReview().getId()));
+            document.add(new Paragraph("Employee: " + response.getReview().getEmployee().getName()));
+            document.add(new Paragraph("Vacancy: " + response.getReview().getVacancy().getTitle()));
+            document.add(new Paragraph("Rating: " + response.getReview().getRating()));
+            document.add(new Paragraph("Date: " + response.getReview().getDate()));
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph("Review Text:"));
+            document.add(new Paragraph(response.getReview().getText()));
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph("HR Response:"));
+            document.add(new Paragraph(response.getText()));
+            document.add(new Paragraph(" "));
+
+            document.add(new Paragraph("Response Date: " + response.getPublishDate()));
+        } catch (DocumentException e) {
+            throw new Exception("Error generating PDF", e);
+        } finally {
+            if (document.isOpen()) {
+                document.close();
+            }
+        }
     }
 
     private Response prepareResponse(Review review, String message) {

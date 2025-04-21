@@ -5,10 +5,10 @@ import com.blps.lab1.entities.Review;
 import com.blps.lab1.repositories.ReportRepository;
 import com.blps.lab1.repositories.ReviewRepository;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -16,12 +16,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Slf4j
+@RequiredArgsConstructor
 public class ReportService {
-    @Autowired
-    private ReviewRepository reviewRepository;
-    @Autowired
-    private ReportRepository reportRepository;
+    private final ReviewRepository reviewRepository;
+    private final ReportRepository reportRepository;
 
     @Scheduled(cron = "0 0 9 * * MON")
     @Transactional
@@ -75,14 +73,7 @@ public class ReportService {
         report.setAverageRating(metrics.avgRating());
         report.setNegativeReviewsCount((int) metrics.negativeCount());
 
-        logReportAction(report, periodStart, periodEnd, metrics);
         return reportRepository.save(report);
-    }
-
-    private void logReportAction(Report report, LocalDate startDate, LocalDate endDate, ReportMetrics metrics) {
-        log.info("{} отчет за период с {} по {}: средний рейтинг {}, негативных отзывов {}",
-                report.getId() == null ? "Создан новый" : "Обновлен",
-                startDate, endDate, metrics.avgRating(), metrics.negativeCount());
     }
 
     private record ReportMetrics(double avgRating, long negativeCount) {}

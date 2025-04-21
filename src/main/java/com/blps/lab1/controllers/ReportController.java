@@ -4,21 +4,21 @@ import com.blps.lab1.entities.Report;
 import com.blps.lab1.exceptions.ErrorMessage;
 import com.blps.lab1.exceptions.ReportNotFoundException;
 import com.blps.lab1.services.ReportService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/report")
 public class ReportController {
-    @Autowired
-    private ReportService reportService;
+    private final ReportService reportService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('RECEIVE_REPORT')")
     public Report getWeeklyReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return reportService.findReportByPeriod(date);
