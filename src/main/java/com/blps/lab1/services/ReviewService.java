@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Paragraph;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
@@ -80,7 +84,7 @@ public class ReviewService {
             message = templateService.createResponseTemplate(review);
         }
         var response = prepareResponse(review, message);
-        publishResponse(response, pdfStream);
+        publishResponseTransactional(response);
         return response;
     }
 
@@ -130,6 +134,12 @@ public class ReviewService {
                 document.close();
             }
         }
+    }
+
+    @Transactional
+    public void publishResponseTransactional(Response response) {
+        responseRepository.save(response);
+        reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
     }
 
     private Response prepareResponse(Review review, String message) {
