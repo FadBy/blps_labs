@@ -16,6 +16,7 @@ import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Paragraph;
 import com.blps.lab1.utils.TransactionHelper;
+import com.blps.lab1.utils.TransactionHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.*;
@@ -40,6 +41,15 @@ public class ReviewService {
     private VacancyRepository vacancyRepository;
     @Autowired
     private TemplateService templateService;
+    @Autowired
+    private TransactionHelper transactionHelper;
+
+    @Scheduled(fixedRate = 60000)
+    public List<Review> processNewReviews() {
+        System.out.println("processNewReviews");
+        List<Review> reviews = reviewRepository.findAllByStatus(ReviewStatus.NEW);
+        for (var review : reviews) {
+           processReview(review);
     @Autowired
     private TransactionHelper transactionHelper;
 
