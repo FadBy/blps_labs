@@ -7,10 +7,10 @@ import com.blps.lab1.repositories.EmployeeRepository;
 import com.blps.lab1.repositories.ResponseRepository;
 import com.blps.lab1.repositories.ReviewRepository;
 import com.blps.lab1.repositories.VacancyRepository;
+import com.blps.lab1.utils.TransactionHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.*;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,6 +30,8 @@ public class ReviewService {
     private VacancyRepository vacancyRepository;
     @Autowired
     private TemplateService templateService;
+    @Autowired
+    private TransactionHelper transactionHelper;
 
     @Scheduled(fixedRate = 60000)
     public List<Review> processNewReviews() {
@@ -77,23 +79,15 @@ public class ReviewService {
             message = templateService.createResponseTemplate(review);
         }
         var response = prepareResponse(review, message);
-        publishResponseTransactional(response);
+        publishResponse(response);
     }
 
     private void publishResponse(Response response) {
-        responseRepository.save(response);
-        reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
-        sendReportToHR(response);
-    }
-
-    @Transactional
-    private void publishResponseTransactional(Response response) {
-        responseRepository.save(response);
-        reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
-    }
-
-    private void sendReportToHR(Response response) {
-        // Отправляем отчет HR
+        transactionHelper.executeInTransaction(() -> {
+            responseRepository.save(response);
+            reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
+            sendReportToHR(response);
+        });
     }
 
     private Response prepareResponse(Review review, String message) {
@@ -103,5 +97,9 @@ public class ReviewService {
         response.setPublishDate(LocalDate.now());
         response.setReview(review);
         return response;
+    }
+
+    private void sendReportToHR(Response response) {
+        // Отправляем отчет HR
     }
 }
