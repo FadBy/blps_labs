@@ -15,10 +15,10 @@ import org.springframework.stereotype.Service;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Paragraph;
+import com.blps.lab1.utils.TransactionHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.*;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
@@ -28,12 +28,20 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
-    private final ReviewRepository reviewRepository;
-    private final ResponseRepository responseRepository;
-    private final HRService hrService;
-    private final EmployeeRepository employeeRepository;
-    private final VacancyRepository vacancyRepository;
-    private final TemplateService templateService;
+    @Autowired
+    private ReviewRepository reviewRepository;
+    @Autowired
+    private ResponseRepository responseRepository;
+    @Autowired
+    private HRService hrService;
+    @Autowired
+    private EmployeeRepository employeeRepository;
+    @Autowired
+    private VacancyRepository vacancyRepository;
+    @Autowired
+    private TemplateService templateService;
+    @Autowired
+    private TransactionHelper transactionHelper;
 
     public Resource processNewReviews() throws Exception {
         Review review = reviewRepository.findAllByStatus(ReviewStatus.NEW).stream().findFirst().orElse(null);
@@ -84,10 +92,18 @@ public class ReviewService {
             message = templateService.createResponseTemplate(review);
         }
         var response = prepareResponse(review, message);
+        publishResponse(response);
         publishResponseTransactional(response);
         return response;
     }
 
+    private void publishResponse(Response response) {
+        transactionHelper.executeInTransaction(() -> {
+            responseRepository.save(response);
+            reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
+            sendReportToHR(response);
+        });
+    }
     private void publishResponse(Response response, ByteArrayOutputStream pdfStream) {
         responseRepository.save(response);
         reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
@@ -149,5 +165,9 @@ public class ReviewService {
         response.setPublishDate(LocalDate.now());
         response.setReview(review);
         return response;
+    }
+
+    private void sendReportToHR(Response response) {
+        // Отправляем отчет HR
     }
 }
