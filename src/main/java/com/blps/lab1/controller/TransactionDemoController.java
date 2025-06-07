@@ -1,9 +1,13 @@
 package com.blps.lab1.controller;
 
+import com.blps.lab1.entity.TransactionLog;
+import com.blps.lab1.repository.TransactionLogRepository;
 import com.blps.lab1.service.TransactionDemoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class TransactionDemoController {
 
     private final TransactionDemoService transactionDemoService;
+    private final TransactionLogRepository transactionLogRepository;
 
     @PostMapping("/success")
     public ResponseEntity<String> testSuccessfulTransaction() {
@@ -36,5 +41,10 @@ public class TransactionDemoController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Nested transaction failed: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/logs")
+    public ResponseEntity<List<TransactionLog>> getTransactionLogs() {
+        return ResponseEntity.ok(transactionLogRepository.findAll());
     }
 } 

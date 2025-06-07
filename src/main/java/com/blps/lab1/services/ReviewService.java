@@ -1,6 +1,7 @@
 package com.blps.lab1.services;
 
 import com.blps.lab1.dto.ReviewDTO;
+import com.blps.lab1.dto.ReviewMessage;
 import com.blps.lab1.entities.*;
 import com.blps.lab1.exceptions.ReviewInvalidException;
 import com.blps.lab1.repositories.EmployeeRepository;
@@ -9,8 +10,10 @@ import com.blps.lab1.repositories.ReviewRepository;
 import com.blps.lab1.repositories.VacancyRepository;
 import com.itextpdf.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -23,6 +26,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ResponseRepository responseRepository;
@@ -30,6 +34,7 @@ public class ReviewService {
     private final EmployeeRepository employeeRepository;
     private final VacancyRepository vacancyRepository;
     private final TemplateService templateService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public Resource processNewReviews() throws Exception {
         Review review = reviewRepository.findAllByStatus(ReviewStatus.NEW).stream().findFirst().orElse(null);
@@ -58,10 +63,24 @@ public class ReviewService {
         newReview.setStatus(ReviewStatus.NEW);
         newReview.setDate(review.getDate());
         newReview.setEmployee(employee);
-        newReview.setStatus(ReviewStatus.NEW);
         newReview.setProblemCategory(review.getProblemCategory());
         newReview.setVacancy(vacancy);
-        return reviewRepository.save(newReview);
+        
+        Review savedReview = reviewRepository.save(newReview);
+        
+        // Отправляем сообщение в Kafka
+        ReviewMessage message = new ReviewMessage(
+            savedReview.getId(),
+            "CREATE",
+            savedReview.getText(),
+            savedReview.getEmployee().getId(),
+            savedReview.getVacancy().getId()
+        );
+        
+        kafkaTemplate.send("review-topic", message);
+        log.info("Sent review message to Kafka: {}", message);
+        
+        return savedReview;
     }
 
     public List<Review> getReviewsByVacancy(Long vacancyId) {
