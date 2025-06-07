@@ -49,3 +49,14 @@ dependencies {
 //tasks.named('test') {
 //	useJUnitPlatform()
 //}
+
+task runSecondInstance(type: org.springframework.boot.gradle.tasks.run.BootRun) {
+	group = 'application'
+	description = 'Runs the second instance of the application on port 8082'
+	doFirst {
+		mainClass.set('com.blps.lab1.Lab1Application')
+		classpath = sourceSets.main.runtimeClasspath
+		systemProperty('spring.profiles.active', '2')
+		systemProperty('server.port', '8082')
+	}
+}
