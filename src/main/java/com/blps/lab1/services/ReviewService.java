@@ -117,7 +117,6 @@ public class ReviewService {
     private void publishResponse(Response response, ByteArrayOutputStream pdfStream) {
         responseRepository.save(response);
         reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
-
     }
 
     private void generatePDF(Response response, ByteArrayOutputStream pdfStream) throws Exception {

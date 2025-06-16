@@ -36,6 +36,11 @@ dependencies {
 	
 	implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.2'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	implementation 'com.atomikos:spring-boot3:6.0.0'
+	implementation 'com.atomikos:transactions-jta:6.0.0'
+	implementation 'jakarta.transaction:jakarta.transaction-api:2.0.1'
+	implementation 'org.springframework.kafka:spring-kafka'
+	implementation 'org.apache.kafka:kafka-clients:3.6.1'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 	implementation 'com.itextpdf:itextpdf:5.5.13.3'
@@ -48,6 +53,17 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+//tasks.named('test') {
+//	useJUnitPlatform()
+//}
+
+task runSecondInstance(type: org.springframework.boot.gradle.tasks.run.BootRun) {
+	group = 'application'
+	description = 'Runs the second instance of the application on port 8082'
+	doFirst {
+		mainClass.set('com.blps.lab1.Lab1Application')
+		classpath = sourceSets.main.runtimeClasspath
+		systemProperty('spring.profiles.active', '2')
+		systemProperty('server.port', '8082')
+	}
 }
