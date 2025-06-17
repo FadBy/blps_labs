@@ -6,13 +6,13 @@ import com.blps.lab1.entities.User;
 import com.blps.lab1.repositories.PrivilegeRepository;
 import com.blps.lab1.repositories.RoleRepository;
 import com.blps.lab1.repositories.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import jakarta.transaction.Transactional;
 
 import java.util.Collection;
 import java.util.List;
@@ -88,7 +88,12 @@ public class SetupDataLoader implements ApplicationListener<ContextRefreshedEven
     @Transactional
     public Role createRoleIfNotFound(String name, Collection<Privilege> privileges) {
         return roleRepository.findByName(name)
+                .map(role -> {
+                    role.setPrivileges(privileges); // обновим привилегии, если роль уже есть
+                    return roleRepository.save(role);
+                })
                 .orElseGet(() -> roleRepository.save(
                         Role.builder().name(name).privileges(privileges).build()));
     }
+
 }

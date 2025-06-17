@@ -3,11 +3,15 @@ package com.blps.lab1.services;
 import com.blps.lab1.dto.ReviewDTO;
 import com.blps.lab1.entities.*;
 import com.blps.lab1.exceptions.ReviewInvalidException;
+import com.blps.lab1.jca.MailConnection;
+import com.blps.lab1.jca.MailConnectionFactory;
+import com.blps.lab1.jca.MailManagedConnectionFactory;
 import com.blps.lab1.repositories.EmployeeRepository;
 import com.blps.lab1.repositories.ResponseRepository;
 import com.blps.lab1.repositories.ReviewRepository;
 import com.blps.lab1.repositories.VacancyRepository;
 import com.itextpdf.text.pdf.PdfWriter;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -21,6 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.*;
 
+import javax.resource.ResourceException;
+import javax.resource.spi.ConnectionManager;
+import javax.resource.spi.ConnectionRequestInfo;
+import javax.resource.spi.ManagedConnection;
+import javax.resource.spi.ManagedConnectionFactory;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -43,15 +52,8 @@ public class ReviewService {
     private TemplateService templateService;
     @Autowired
     private TransactionHelper transactionHelper;
-
-    @Scheduled(fixedRate = 60000)
-    public List<Review> processNewReviews() {
-        System.out.println("processNewReviews");
-        List<Review> reviews = reviewRepository.findAllByStatus(ReviewStatus.NEW);
-        for (var review : reviews) {
-           processReview(review);
     @Autowired
-    private TransactionHelper transactionHelper;
+    private MailConnectionFactory mailConnectionFactory;
 
     public Resource processNewReviews() throws Exception {
         Review review = reviewRepository.findAllByStatus(ReviewStatus.NEW).stream().findFirst().orElse(null);
@@ -59,7 +61,7 @@ public class ReviewService {
 
         Response response = null;
         if (review != null) {
-            response = processReview(review, pdfStream);
+            response = processReview(review);
         }
         generatePDF(response, pdfStream);
 
@@ -94,7 +96,7 @@ public class ReviewService {
         return reviewRepository.findAllByVacancy(vacancy);
     }
 
-    private Response processReview(Review review, ByteArrayOutputStream pdfStream) {
+    private Response processReview(Review review) {
         String message;
         if (review.getRating() < 3.5) {
             message = hrService.escalateReview(review);
@@ -102,7 +104,6 @@ public class ReviewService {
             message = templateService.createResponseTemplate(review);
         }
         var response = prepareResponse(review, message);
-        publishResponse(response);
         publishResponseTransactional(response);
         return response;
     }
@@ -111,7 +112,11 @@ public class ReviewService {
         transactionHelper.executeInTransaction(() -> {
             responseRepository.save(response);
             reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
-            sendReportToHR(response);
+            try {
+                sendMail(response);
+            } catch (ResourceException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
     private void publishResponse(Response response, ByteArrayOutputStream pdfStream) {
@@ -165,6 +170,11 @@ public class ReviewService {
     public void publishResponseTransactional(Response response) {
         responseRepository.save(response);
         reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
+        try {
+            sendMail(response);
+        } catch (ResourceException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Response prepareResponse(Review review, String message) {
@@ -176,7 +186,10 @@ public class ReviewService {
         return response;
     }
 
-    private void sendReportToHR(Response response) {
-        // Отправляем отчет HR
+    public void sendMail(Response response) throws ResourceException {
+        String mail = response.getReview().getEmployee().getName();
+        if (!mail.contains("@")) return;
+        MailConnection connection = mailConnectionFactory.getConnection();
+        connection.sendEmail(mail, "Ответ на отзыв", response.getText());
     }
 }

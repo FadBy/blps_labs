@@ -1,5 +1,6 @@
 package com.blps.lab1.configs;
 
+import com.atomikos.icatch.jta.UserTransactionManager;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.UserTransaction;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
@@ -11,6 +12,11 @@ public class AtomikosJtaPlatform extends AbstractJtaPlatform {
 
     static TransactionManager transactionManager;
     static UserTransaction transaction;
+
+    static {
+        transactionManager = new UserTransactionManager();
+        transaction = new com.atomikos.icatch.jta.UserTransactionImp();
+    }
 
     @Override
     protected TransactionManager locateTransactionManager() {

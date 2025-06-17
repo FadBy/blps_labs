@@ -10,7 +10,7 @@ import com.blps.lab1.repositories.RoleRepository;
 import com.blps.lab1.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 

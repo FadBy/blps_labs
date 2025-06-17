@@ -41,6 +41,26 @@ public class User implements UserDetails {
         return getGrantedAuthorities(getPrivileges(roles));
     }
 
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
     private List<String> getPrivileges(Collection<Role> roles) {
         var privileges = new ArrayList<String>();
         var collection = new ArrayList<Privilege>();
