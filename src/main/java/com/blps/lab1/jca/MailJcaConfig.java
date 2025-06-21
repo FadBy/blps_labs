@@ -28,7 +28,7 @@ public class MailJcaConfig {
     @Bean
     public MailConnectionFactory mailConnectionFactory() {
         MailManagedConnectionFactory mcf = new MailManagedConnectionFactory();
-        mcf.setApiKey(smtpHost);     // 👈 Важно!
+        mcf.setSmtpHost(smtpHost);     // 👈 Важно!
         mcf.setSmtpPort(smtpPort);
         mcf.setUsername(username);
         mcf.setPassword(password);

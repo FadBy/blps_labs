@@ -14,7 +14,7 @@ import java.util.Set;
 @Setter
 public class MailManagedConnectionFactory implements ManagedConnectionFactory {
 
-    private String apiKey;
+    private String smtpHost;
     private int smtpPort;
     private String username;
     private String password;
@@ -31,7 +31,7 @@ public class MailManagedConnectionFactory implements ManagedConnectionFactory {
 
     @Override
     public ManagedConnection createManagedConnection(Subject subject, ConnectionRequestInfo cxRequestInfo) {
-        return new MailManagedConnection(apiKey, smtpPort, username, password);
+        return new MailManagedConnection(smtpHost, smtpPort, username, password);
     }
 
     @Override
@@ -46,6 +46,6 @@ public class MailManagedConnectionFactory implements ManagedConnectionFactory {
     @Override
     public boolean equals(Object obj) { return obj instanceof MailManagedConnectionFactory; }
     @Override
-    public int hashCode() { return apiKey.hashCode(); }
+    public int hashCode() { return smtpHost.hashCode(); }
 }
 

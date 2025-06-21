@@ -1,0 +1,58 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: ltwX,9164
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        transaction:
+          jta:
+            platform: com.blps.lab1.configs.AtomikosJtaPlatform
+        current_session_context_class: jta
+
+  jta:
+    enabled: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: review-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: com.blps.lab1.dto
+
+mail:
+  smtp:
+    host: smtp.gmail.com
+    port: 587
+    auth: true
+    starttls:
+      enable: true
+  username: fadbyc@gmail.com
+  password: qwndrlajcsfiohtr
+
+camunda:
+  bpm:
+    admin-user:
+      id: demo
+      password: demo
+    database:
+      schema-update: true
+    filter:
+      create: All tasks
+    auto-deployment-enabled: true
+    webapp:
+      enabled: true

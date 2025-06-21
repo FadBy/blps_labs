@@ -6,6 +6,7 @@ import com.blps.lab1.exceptions.ErrorMessage;
 import com.blps.lab1.exceptions.ReviewInvalidException;
 import com.blps.lab1.services.ReviewService;
 import lombok.RequiredArgsConstructor;
+import org.camunda.bpm.engine.TaskService;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,8 @@ import java.util.List;
 @RequestMapping("/api/reviews")
 public class ReviewController {
     private final ReviewService reviewService;
+
+    private final TaskService taskService;
 
     @PostMapping
     @PreAuthorize("hasAuthority('WRITE_REVIEWS')")
@@ -64,5 +67,11 @@ public class ReviewController {
     @PreAuthorize("hasAuthority('READ_REVIEWS')")
     public List<Review> getReviewsByVacancy(@RequestParam Long vacancyId) {
         return reviewService.getReviewsByVacancy(vacancyId);
+    }
+
+    @GetMapping("/task/{taskId}/complete")
+    @PreAuthorize("hasAuthority('ANSWER_REVIEWS')")
+    public void completeTask(@PathVariable String taskId) {
+        taskService.complete(taskId);
     }
 }
