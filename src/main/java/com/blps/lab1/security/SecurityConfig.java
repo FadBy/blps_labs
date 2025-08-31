@@ -50,20 +50,19 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // Разрешаем доступ к Camunda Web Apps для админов
                         .requestMatchers(
-                                "/camunda/app/**",
+                                "/camunda/**",
+                                "/camunda-welcome",
                                 "/engine-rest/**",
                                 "/api/engine/**"
                         ).permitAll()
 
-                        // Публичные эндпоинты
                         .requestMatchers(
+                                "/forms/**",
                                 "/api/auth/**",
                                 "/api/kafka/test/**"
                         ).permitAll()
 
-                        // Все остальное требует аутентификации
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
@@ -71,12 +70,6 @@ public class SecurityConfig {
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-                // Настройка Basic Auth для Camunda API (опционально)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .httpBasic(withDefaults())
                 .build();
     }
     @Bean

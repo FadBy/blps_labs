@@ -1,0 +1,24 @@
+{
+  "components": [
+    {
+      "label": "Pack Cash",
+      "type": "textfield",
+      "layout": {
+        "row": "Row_0xgxnjr",
+        "columns": null
+      },
+      "id": "Field_00x8x92",
+      "key": "money",
+      "description": "How much cash?"
+    }
+  ],
+  "type": "default",
+  "id": "getTaxi2",
+  "exporter": {
+    "name": "Camunda Modeler",
+    "version": "5.38.1"
+  },
+  "executionPlatform": "Camunda Platform",
+  "executionPlatformVersion": "7.23.0",
+  "schemaVersion": 19
+}

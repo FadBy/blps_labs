@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class HRService {
-    public String escalateReview(Review review) {
-        return String.format("Благодарим за отзыв! Мы обязательно улучшим %s", review.getProblemCategory());
+    public String escalateReview(String category) {
+        return String.format("Благодарим за отзыв! Мы обязательно улучшим %s", category);
     }
 }

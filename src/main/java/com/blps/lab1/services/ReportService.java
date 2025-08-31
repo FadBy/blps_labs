@@ -23,12 +23,12 @@ public class ReportService {
 
     @Scheduled(cron = "0 0 9 * * MON")
     @Transactional
-    public void generateReportLastWeek() {
+    public Report generateReportLastWeek() {
         LocalDate now = LocalDate.now();
         LocalDate endOfLastWeek = now.minusDays(now.getDayOfWeek().getValue());
         LocalDate startOfLastWeek = endOfLastWeek.minusDays(6);
 
-        generateReportForPeriod(startOfLastWeek, endOfLastWeek);
+        return generateReportForPeriod(startOfLastWeek, endOfLastWeek);
     }
 
     @Transactional
@@ -43,17 +43,17 @@ public class ReportService {
         return existingReport.orElseGet(() -> generateReportForPeriod(weekStart, weekEnd));
     }
 
-    private Report generateReportForPeriod(LocalDate startDate, LocalDate endDate) {
+    public Report generateReportForPeriod(LocalDate startDate, LocalDate endDate) {
         List<Review> weeklyReviews = getReviewsForPeriod(startDate, endDate);
         ReportMetrics metrics = calculateMetrics(weeklyReviews);
         return saveOrUpdateReport(endDate, metrics, startDate);
     }
 
-    private List<Review> getReviewsForPeriod(LocalDate startDate, LocalDate endDate) {
+    public List<Review> getReviewsForPeriod(LocalDate startDate, LocalDate endDate) {
         return reviewRepository.findAllByDateBetween(startDate, endDate);
     }
 
-    private ReportMetrics calculateMetrics(List<Review> reviews) {
+    public ReportMetrics calculateMetrics(List<Review> reviews) {
         double avgRating = reviews.stream()
                 .mapToDouble(Review::getRating)
                 .average()
@@ -77,5 +77,5 @@ public class ReportService {
         return reportRepository.save(report);
     }
 
-    private record ReportMetrics(double avgRating, long negativeCount) {}
+    public record ReportMetrics(double avgRating, long negativeCount) {}
 }

@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.38.1">
+  <bpmn:collaboration id="Collaboration_1apvezo">
+    <bpmn:participant id="Participant_0zlxmsz" processRef="ReviewHandlingProcess" />
+    <bpmn:participant id="Participant_1mhv91n" name="База данных" processRef="Process_13uh5mb" />
+    <bpmn:participant id="Participant_0wsuz18" name="Head of HR flow" processRef="WeeklyReport" />
+  </bpmn:collaboration>
+  <bpmn:process id="ReviewHandlingProcess" name="Review Handling" isExecutable="true">
+    <bpmn:serviceTask id="PositiveReviewTask" name="Создать шаблон" camunda:class="com.blps.lab1.delegates.CreatePositiveReviewTemplateDelegate">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="ReviewTypeGateway" name="Тип отзыва?">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_0bjlhxm</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="NegativeReviewTask" name="Эскалация к HR" camunda:class="com.blps.lab1.delegates.EscalateToHRDelegate">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Activity_1i9nn5b" name="Отзыв пользователя">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="text" label="Текст" type="string" />
+          <camunda:formField id="rating" label="Рейтинг" type="string" defaultValue="" />
+          <camunda:formField id="vacancyID" label="ID вакансии" type="long" />
+          <camunda:formField id="EmployeeName" label="Имя пользователя" type="string" />
+          <camunda:formField id="problemCategory" label="Категория" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0k6jssw</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ep1r64</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:startEvent id="Event_1fe7dhc">
+      <bpmn:outgoing>Flow_0k6jssw</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0kacpjp" messageRef="Message_26abjd9" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Activity_1e2h7ba" name="Сохранить отзыв" camunda:class="com.blps.lab1.delegates.SaveReviewDelegate">
+      <bpmn:incoming>Flow_0ep1r64</bpmn:incoming>
+      <bpmn:outgoing>Flow_0bjlhxm</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="PrepareResponseTask" name="Подготовить ответ" camunda:class="com.blps.lab1.delegates.PrepareResponseDelegate">
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_1gqt7km</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Activity_0u3e3o0" name="Сохранить ответ" camunda:class="com.blps.lab1.delegates.SaveResponseDelegate">
+      <bpmn:incoming>Flow_1gqt7km</bpmn:incoming>
+      <bpmn:outgoing>Flow_1qbd0iv</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1in7cg9">
+        <bpmn:targetRef>DataStoreReference_0jb2tzn</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent" name="Отзыв обработан">
+      <bpmn:incoming>Flow_1qbd0iv</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_5" name="Позитивный" sourceRef="ReviewTypeGateway" targetRef="PositiveReviewTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{rating &gt; 3.5}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="PositiveReviewTask" targetRef="PrepareResponseTask" />
+    <bpmn:sequenceFlow id="Flow_0bjlhxm" sourceRef="Activity_1e2h7ba" targetRef="ReviewTypeGateway" />
+    <bpmn:sequenceFlow id="Flow_4" name="Негативный" sourceRef="ReviewTypeGateway" targetRef="NegativeReviewTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">#{rating &lt;= 3.5}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="NegativeReviewTask" targetRef="PrepareResponseTask" />
+    <bpmn:sequenceFlow id="Flow_0k6jssw" sourceRef="Event_1fe7dhc" targetRef="Activity_1i9nn5b" />
+    <bpmn:sequenceFlow id="Flow_0ep1r64" sourceRef="Activity_1i9nn5b" targetRef="Activity_1e2h7ba" />
+    <bpmn:sequenceFlow id="Flow_1gqt7km" sourceRef="PrepareResponseTask" targetRef="Activity_0u3e3o0" />
+    <bpmn:sequenceFlow id="Flow_1qbd0iv" sourceRef="Activity_0u3e3o0" targetRef="EndEvent" />
+  </bpmn:process>
+  <bpmn:process id="Process_13uh5mb" isExecutable="false">
+    <bpmn:dataStoreReference id="DataStoreReference_0jb2tzn" name="База Отзывов" />
+    <bpmn:dataStoreReference id="DataStoreReference_1ptthx2" name="База отчетов" />
+  </bpmn:process>
+  <bpmn:process id="WeeklyReport" name="Weekly report" isExecutable="true">
+    <bpmn:businessRuleTask id="WeeklyReportTask" name="Сформировать отчет" camunda:class="com.blps.lab1.delegates.FormReportDelegate">
+      <bpmn:incoming>Flow_0ldbi3s</bpmn:incoming>
+      <bpmn:outgoing>Flow_0uosfrp</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:endEvent id="ReportReadyEnd" name="Отчет готов">
+      <bpmn:incoming>Flow_16z8j57</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Activity_1fngkyg" name="Сохранить отчет" camunda:class="com.blps.lab1.delegates.SaveReportDelegate">
+      <bpmn:incoming>Flow_0uosfrp</bpmn:incoming>
+      <bpmn:outgoing>Flow_16z8j57</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_11hrtjv">
+        <bpmn:targetRef>DataStoreReference_1ptthx2</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:startEvent id="Event_074yyaz">
+      <bpmn:outgoing>Flow_0ldbi3s</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_0b95q4h">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">R/PT15S</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="Flow_0ldbi3s" sourceRef="Event_074yyaz" targetRef="WeeklyReportTask" />
+    <bpmn:sequenceFlow id="Flow_0uosfrp" sourceRef="WeeklyReportTask" targetRef="Activity_1fngkyg" />
+    <bpmn:sequenceFlow id="Flow_16z8j57" sourceRef="Activity_1fngkyg" targetRef="ReportReadyEnd" />
+  </bpmn:process>
+  <bpmn:message id="Message_26abjd9" name="Message_26abjd9" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1apvezo">
+      <bpmndi:BPMNShape id="Participant_0zlxmsz_di" bpmnElement="Participant_0zlxmsz" isHorizontal="true">
+        <dc:Bounds x="152" y="380" width="1238" height="320" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="PositiveReviewTask_di" bpmnElement="PositiveReviewTask">
+        <dc:Bounds x="690" y="540" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ReviewTypeGateway_di" bpmnElement="ReviewTypeGateway" isMarkerVisible="true">
+        <dc:Bounds x="590" y="505" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="639" y="503" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0mi7iph_di" bpmnElement="NegativeReviewTask">
+        <dc:Bounds x="690" y="440" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_07bxe2h_di" bpmnElement="Activity_1i9nn5b">
+        <dc:Bounds x="280" y="490" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_18sb1bg_di" bpmnElement="Event_1fe7dhc">
+        <dc:Bounds x="202" y="512" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="218" y="1285" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_13t01ds_di" bpmnElement="Activity_1e2h7ba">
+        <dc:Bounds x="440" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1gvjcgd_di" bpmnElement="PrepareResponseTask">
+        <dc:Bounds x="870" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_169fpo1_di" bpmnElement="Activity_0u3e3o0">
+        <dc:Bounds x="1050" y="490" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_di" bpmnElement="EndEvent">
+        <dc:Bounds x="1242" y="512" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1215" y="553" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="615" y="555" />
+        <di:waypoint x="615" y="580" />
+        <di:waypoint x="690" y="580" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="608" y="593" width="63" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7">
+        <di:waypoint x="790" y="580" />
+        <di:waypoint x="810" y="580" />
+        <di:waypoint x="810" y="530" />
+        <di:waypoint x="870" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0bjlhxm_di" bpmnElement="Flow_0bjlhxm">
+        <di:waypoint x="540" y="530" />
+        <di:waypoint x="590" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="615" y="505" />
+        <di:waypoint x="615" y="480" />
+        <di:waypoint x="690" y="480" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="619" y="453" width="61" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6">
+        <di:waypoint x="790" y="480" />
+        <di:waypoint x="810" y="480" />
+        <di:waypoint x="810" y="530" />
+        <di:waypoint x="870" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0k6jssw_di" bpmnElement="Flow_0k6jssw">
+        <di:waypoint x="238" y="530" />
+        <di:waypoint x="280" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ep1r64_di" bpmnElement="Flow_0ep1r64">
+        <di:waypoint x="380" y="530" />
+        <di:waypoint x="440" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1gqt7km_di" bpmnElement="Flow_1gqt7km">
+        <di:waypoint x="970" y="530" />
+        <di:waypoint x="1050" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1qbd0iv_di" bpmnElement="Flow_1qbd0iv">
+        <di:waypoint x="1150" y="530" />
+        <di:waypoint x="1242" y="530" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_1mhv91n_di" bpmnElement="Participant_1mhv91n" isHorizontal="true">
+        <dc:Bounds x="650" y="100" width="470" height="250" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_0jb2tzn_di" bpmnElement="DataStoreReference_0jb2tzn">
+        <dc:Bounds x="765" y="205" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="754" y="183" width="72" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_1ptthx2_di" bpmnElement="DataStoreReference_1ptthx2">
+        <dc:Bounds x="905" y="205" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="897" y="262" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_0wsuz18_di" bpmnElement="Participant_0wsuz18" isHorizontal="true">
+        <dc:Bounds x="179" y="100" width="471" height="250" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WeeklyReportTask_di" bpmnElement="WeeklyReportTask">
+        <dc:Bounds x="330" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0a7ix5d_di" bpmnElement="ReportReadyEnd">
+        <dc:Bounds x="592" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="580" y="245" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1vc71aq_di" bpmnElement="Activity_1fngkyg">
+        <dc:Bounds x="460" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_058t7t8_di" bpmnElement="Event_074yyaz">
+        <dc:Bounds x="242" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0uosfrp_di" bpmnElement="Flow_0uosfrp">
+        <di:waypoint x="430" y="220" />
+        <di:waypoint x="460" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16z8j57_di" bpmnElement="Flow_16z8j57">
+        <di:waypoint x="560" y="220" />
+        <di:waypoint x="592" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ldbi3s_di" bpmnElement="Flow_0ldbi3s">
+        <di:waypoint x="278" y="220" />
+        <di:waypoint x="330" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_1in7cg9_di" bpmnElement="DataOutputAssociation_1in7cg9">
+        <di:waypoint x="1100" y="490" />
+        <di:waypoint x="1100" y="360" />
+        <di:waypoint x="790" y="360" />
+        <di:waypoint x="790" y="255" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="DataOutputAssociation_11hrtjv_di" bpmnElement="DataOutputAssociation_11hrtjv">
+        <di:waypoint x="510" y="180" />
+        <di:waypoint x="510" y="80" />
+        <di:waypoint x="930" y="80" />
+        <di:waypoint x="930" y="205" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -8,12 +8,6 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
-    properties:
-      hibernate:
-        transaction:
-          jta:
-            platform: com.blps.lab1.configs.AtomikosJtaPlatform
-        current_session_context_class: jta
 
   jta:
     enabled: true
@@ -46,6 +40,12 @@ mail:
 
 camunda:
   bpm:
+    deployment-resource-patterns:
+      - classpath*:**/*.bpmn
+      - classpath*:**/*.form
+    generic-properties:
+      properties:
+        historyTimeToLive: P1D
     admin-user:
       id: demo
       password: demo

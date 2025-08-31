@@ -74,8 +74,10 @@ public class ReviewService {
         }
         var employee = employeeRepository.findByName(review.getEmployeeName())
                 .orElseThrow(() -> new ReviewInvalidException("Employee not found"));
+        System.out.println(employee.toString());
         var vacancy = vacancyRepository.findVacancyById(review.getVacancyId())
                 .orElseThrow(() -> new ReviewInvalidException("Vacancy not found"));
+        System.out.println(vacancy.toString());
         var newReview = new Review();
         newReview.setRating(review.getRating());
         newReview.setText(review.getText());
@@ -99,16 +101,16 @@ public class ReviewService {
     private Response processReview(Review review) {
         String message;
         if (review.getRating() < 3.5) {
-            message = hrService.escalateReview(review);
+            message = hrService.escalateReview(review.getProblemCategory());
         } else {
-            message = templateService.createResponseTemplate(review);
+            message = templateService.createResponseTemplate(review.getRating());
         }
         var response = prepareResponse(review, message);
         publishResponseTransactional(response);
         return response;
     }
 
-    private void publishResponse(Response response) {
+    public void publishResponse(Response response) {
         transactionHelper.executeInTransaction(() -> {
             responseRepository.save(response);
             reviewRepository.updateStatus(response.getReview().getId(), ReviewStatus.PROCESSED);
@@ -177,7 +179,7 @@ public class ReviewService {
         }
     }
 
-    private Response prepareResponse(Review review, String message) {
+    public Response prepareResponse(Review review, String message) {
         Response response = new Response();
         response.setText(message);
         response.setStatus(ResponseStatus.PUBLISHED);
